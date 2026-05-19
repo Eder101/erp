@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Módulo de Activos | ERP Interno</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="ico"><i class="fas fa-server"></i></div>
+    <div>
+      <h2>ERP Interno</h2>
+      <span>EHS Tecnologías</span>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-label">Principal</div>
+    <div class="nav-item active" onclick="showSection('dashboard')"><i class="fas fa-th-large"></i> Dashboard</div>
+    <div class="sb-label">Módulo de Activos</div>
+    <div class="nav-item" onclick="showSection('inventario')"><i class="fas fa-laptop"></i> Inventario de Activos</div>
+    <div class="nav-item" onclick="openModal('add')"><i class="fas fa-plus-circle"></i> Registrar Activo</div>
+    <div class="nav-item" onclick="showSection('reportes')"><i class="fas fa-chart-bar"></i> Reportes</div>
+    <div class="nav-item" onclick="showSection('tintas')"><i class="fas fa-print"></i> Tintas</div>
+    <div class="sb-label">Sistema</div>
+    <div class="nav-item" onclick="showSection('usuarios')"><i class="fas fa-users"></i> Usuarios</div>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="av">JP</div>
+      <div>
+        <h4>Javier Pérez</h4>
+        <p>Administrador TI</p>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1 id="tb-title">Dashboard</h1>
+      <p id="tb-sub">Resumen general del módulo de activos</p>
+    </div>
+    <div class="tb-actions">
+      <button class="notif-btn" title="Notificaciones"><i class="fas fa-bell"></i><span class="dot"></span></button>
+      <button class="btn btn-p" onclick="openModal('add')"><i class="fas fa-plus"></i> Nuevo Activo</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="section active" id="sec-dashboard">
+      <div class="kpi-grid">
+        <div class="kpi-card cr">
+          <div class="kpi-head"><span class="kpi-lbl">Total Activos</span><div class="kpi-ico r"><i class="fas fa-server"></i></div></div>
+          <div class="kpi-val" id="kv-total">0</div><div class="kpi-sub">Equipos registrados</div>
+        </div>
+        <div class="kpi-card cg">
+          <div class="kpi-head"><span class="kpi-lbl">Funcionales</span><div class="kpi-ico g"><i class="fas fa-check-circle"></i></div></div>
+          <div class="kpi-val" id="kv-activo">0</div><div class="kpi-sub">En operación</div>
+        </div>
+        <div class="kpi-card cy">
+          <div class="kpi-head"><span class="kpi-lbl">En Falla</span><div class="kpi-ico y"><i class="fas fa-triangle-exclamation"></i></div></div>
+          <div class="kpi-val" id="kv-falla">0</div><div class="kpi-sub">Requieren atención</div>
+        </div>
+        <div class="kpi-card cb">
+          <div class="kpi-head"><span class="kpi-lbl">Dados de Baja</span><div class="kpi-ico b"><i class="fas fa-circle-xmark"></i></div></div>
+          <div class="kpi-val" id="kv-baja">0</div><div class="kpi-sub">Fuera de servicio</div>
+        </div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card"><h3><i class="fas fa-chart-bar"></i>Activos por Categoría</h3><canvas id="ch-bar"></canvas></div>
+        <div class="chart-card"><h3><i class="fas fa-chart-pie"></i>Estado de Equipos</h3><canvas id="ch-pie"></canvas></div>
+      </div>
+      <div class="tcard">
+        <div class="tcard-hd">
+          <h3>Últimos registros</h3>
+          <button class="btn btn-s btn-sm" onclick="showSection('inventario')">Ver todos <i class="fas fa-arrow-right"></i></button>
+        </div>
+        <table class="dt"><thead><tr><th>ID</th><th>Marca / Modelo</th><th>Categoría</th><th>Usuario</th><th>Área</th><th>Estado</th></tr></thead>
+        <tbody id="db-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- INVENTARIO -->
+    <div class="section" id="sec-inventario">
+      <div class="sec-hd">
+        <div><h2>Inventario de Activos</h2><p>Gestión completa de equipos informáticos de la empresa</p></div>
+        <button class="btn btn-p" onclick="openModal('add')"><i class="fas fa-plus"></i> Registrar Activo</button>
+      </div>
+      <div class="filters-bar">
+        <div class="search-box"><i class="fas fa-search"></i><input id="fi-q" type="text" placeholder="Buscar por marca, modelo, usuario, MAC, área…" oninput="applyFilters()"></div>
+        <select class="fsel" id="fi-cat" onchange="applyFilters()">
+          <option value="">Todas las categorías</option>
+          <option>Laptop</option><option>All-in-One</option><option>Escritorio</option><option>Monitor</option>
+          <option>Ratón</option><option>Teclado</option><option>Cargador</option><option>Red</option>
+          <option>Servidor</option><option>Multimedia</option><option>NAS</option><option>Seguridad</option><option>Multifuncional</option>
+        </select>
+        <select class="fsel" id="fi-est" onchange="applyFilters()">
+          <option value="">Todos los estados</option>
+          <option>Activo</option><option>Inactivo</option><option>Falla</option><option>Baja</option>
+        </select>
+        <select class="fsel" id="fi-area" onchange="applyFilters()"><option value="">Todas las áreas</option></select>
+        <button class="btn btn-s btn-sm" onclick="clearFilters()"><i class="fas fa-times"></i> Limpiar</button>
+      </div>
+      <div class="tcard">
+        <table class="dt">
+          <thead><tr><th>ID</th><th>Marca</th><th>Modelo</th><th>Categoría</th><th>MAC</th><th>Usuario</th><th>Área</th><th>Estado</th><th class="action-col">Acciones</th></tr></thead>
+          <tbody id="inv-tbody"></tbody>
+        </table>
+        <div class="pag"><span class="pag-info" id="pag-info"></span><div class="pag-btns" id="pag-btns"></div></div>
+      </div>
+    </div>
+
+    <!-- REPORTES -->
+    <div class="section" id="sec-reportes">
+      <div class="sec-hd">
+        <div><h2>Reportes y Consultas</h2><p>Visualización y exportación del inventario de activos</p></div>
+        <button class="btn btn-p" onclick="window.print()"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
+      </div>
+      <div class="rpt-grid">
+        <div class="chart-card"><h3><i class="fas fa-chart-bar"></i>Activos por Categoría</h3><canvas id="rch-bar"></canvas></div>
+        <div class="chart-card"><h3><i class="fas fa-chart-pie"></i>Distribución por Estado</h3><canvas id="rch-pie"></canvas></div>
+        <div class="chart-card"><h3><i class="fas fa-chart-bar"></i>Equipos por Área</h3><canvas id="rch-area"></canvas></div>
+        <div class="chart-card"><h3><i class="fas fa-clipboard-list"></i>Resumen Ejecutivo</h3><div class="rpt-summary" id="rpt-sum"></div></div>
+      </div>
+      <div class="tcard">
+        <div class="tcard-hd"><h3>Listado completo de activos</h3></div>
+        <table class="dt">
+          <thead><tr><th>ID</th><th>Marca</th><th>Modelo</th><th>Categoría</th><th>MAC</th><th>Usuario</th><th>Área</th><th>Descripción</th><th>Estado</th></tr></thead>
+          <tbody id="rpt-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- USUARIOS -->
+    <div class="section" id="sec-usuarios">
+      <div class="sec-hd"><div><h2>Usuarios con Activos Asignados</h2><p>Empleados con equipos registrados</p></div></div>
+      <div class="tcard">
+        <table class="dt">
+          <thead><tr><th>Usuario</th><th>Área</th><th>Equipos</th><th># Equipos</th><th>Estado General</th></tr></thead>
+          <tbody id="usr-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TINTAS -->
+    <div class="section" id="sec-tintas">
+      <div class="sec-hd">
+        <div><h2>Gestión de Tintas</h2><p>Registro e inventario de cartuchos e insumos de impresión</p></div>
+        <button class="btn btn-p" onclick="exportTintasExcel()"><i class="fas fa-file-excel"></i> Exportar Excel</button>
+      </div>
+
+      <!-- FORMULARIO -->
+      <div class="tcard" style="margin-bottom:16px">
+        <div class="tcard-hd">
+          <h3 id="tf-form-title"><i class="fas fa-plus-circle" style="color:var(--r3);margin-right:6px"></i>Registrar Tinta</h3>
+          <button class="btn btn-s btn-sm" id="btn-cancel-tinta" style="display:none" onclick="cancelEditTinta()"><i class="fas fa-times"></i> Cancelar edición</button>
+        </div>
+        <div style="padding:16px 20px 20px">
+          <div class="form-row">
+            <div class="fg">
+              <label>Modelo <span class="req">*</span></label>
+              <input id="tf-modelo" class="fc" placeholder="Ej: HP 950XL">
+              <span class="emsg">Campo requerido</span>
+            </div>
+            <div class="fg">
+              <label>Nombre</label>
+              <input id="tf-nombre" class="fc" placeholder="Ej: Cartucho negro">
+            </div>
+          </div>
+          <div class="form-row" style="margin-top:12px">
+            <div class="fg">
+              <label>Color <span class="req">*</span></label>
+              <input id="tf-color" class="fc" list="colores-dl" placeholder="Ej: Negro, Cian…">
+              <datalist id="colores-dl">
+                <option value="Negro"><option value="Cian"><option value="Magenta"><option value="Amarillo">
+              </datalist>
+              <span class="emsg">Campo requerido</span>
+            </div>
+            <div class="fg">
+              <label>Cantidad</label>
+              <input id="tf-cantidad" class="fc" type="number" min="0" value="1">
+            </div>
+          </div>
+          <div class="form-row" style="margin-top:12px">
+            <div class="fg">
+              <label>Fecha de Ingreso</label>
+              <input id="tf-fingreso" class="fc" type="date">
+            </div>
+            <div class="fg">
+              <label>Fecha de Caducidad</label>
+              <input id="tf-fcaducidad" class="fc" type="date">
+            </div>
+          </div>
+          <div class="form-row" style="margin-top:12px">
+            <div class="fg">
+              <label>Proveedor</label>
+              <input id="tf-proveedor" class="fc" placeholder="Nombre del proveedor (opcional)">
+            </div>
+            <div class="fg">
+              <label>Notas</label>
+              <input id="tf-notas" class="fc" placeholder="Observaciones adicionales">
+            </div>
+          </div>
+          <div style="margin-top:14px">
+            <button class="btn btn-p" onclick="saveTinta()"><i class="fas fa-save"></i> <span id="btn-save-tinta-lbl">Guardar tinta</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLA -->
+      <div class="tcard">
+        <div class="tcard-hd">
+          <h3><i class="fas fa-list" style="color:var(--r3);margin-right:6px"></i>Inventario de Tintas</h3>
+          <div class="search-box" style="width:280px">
+            <i class="fas fa-search"></i>
+            <input id="tfi-q" type="text" placeholder="Filtrar por modelo, color, proveedor…" oninput="renderTintas()">
+          </div>
+        </div>
+        <table class="dt">
+          <thead><tr>
+            <th>Modelo</th><th>Nombre</th><th>Color</th>
+            <th>F. Ingreso</th><th>F. Caducidad</th><th>Cant.</th>
+            <th>Proveedor</th><th>Notas</th><th class="action-col">Acciones</th>
+          </tr></thead>
+          <tbody id="tintas-tbody"></tbody>
+        </table>
+        <div class="pag">
+          <span class="pag-info" id="tintas-pag-info"></span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ── MODAL: ACTIVO (add/edit) ── -->
+<div class="mo" id="mo-activo">
+  <div class="modal">
+    <div class="m-hd">
+      <h2><div class="m-hd-ico"><i class="fas fa-laptop"></i></div><span id="m-title">Registrar Activo</span></h2>
+      <button class="btn-x" onclick="closeModal('mo-activo')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="m-body">
+      <div class="form-row">
+        <div class="fg">
+          <label>ID del Activo</label>
+          <input id="f-id" class="fc" readonly style="background:var(--bg);color:var(--tm)">
+        </div>
+        <div class="fg">
+          <label>Estado <span class="req">*</span></label>
+          <select id="f-est" class="fc">
+            <option value="">Seleccionar…</option>
+            <option>Activo</option><option>Inactivo</option><option>Falla</option><option>Baja</option>
+          </select>
+          <span class="emsg">Campo requerido</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Marca <span class="req">*</span></label>
+          <input id="f-marca" class="fc" placeholder="Ej: Acer, HP, Dell">
+          <span class="emsg">Campo requerido</span>
+        </div>
+        <div class="fg">
+          <label>Modelo <span class="req">*</span></label>
+          <input id="f-modelo" class="fc" placeholder="Ej: Aspire 3, Vostro 3405">
+          <span class="emsg">Campo requerido</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Categoría <span class="req">*</span></label>
+          <select id="f-cat" class="fc">
+            <option value="">Seleccionar categoría…</option>
+            <option>Laptop</option><option>All-in-One</option><option>Escritorio</option><option>Monitor</option>
+            <option>Ratón</option><option>Teclado</option><option>Cargador</option><option>Red</option>
+            <option>Servidor</option><option>Multimedia</option><option>NAS</option><option>Seguridad</option><option>Multifuncional</option>
+          </select>
+          <span class="emsg">Campo requerido</span>
+        </div>
+        <div class="fg">
+          <label>Dirección MAC <span class="req">*</span></label>
+          <input id="f-mac" class="fc" placeholder="XX:XX:XX:XX:XX:XX" maxlength="17" oninput="fmtMAC(this)">
+          <div class="mac-hint">Formato: A1:B2:C3:D4:E5:F6</div>
+          <span class="emsg">Campo requerido</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Usuario Asignado <span class="req">*</span></label>
+          <input id="f-usu" class="fc" placeholder="Nombre completo">
+          <span class="emsg">Campo requerido</span>
+        </div>
+        <div class="fg">
+          <label>Área / Departamento <span class="req">*</span></label>
+          <select id="f-area" class="fc">
+            <option value="">Seleccionar área…</option>
+            <option>Sistemas</option><option>Adquisiciones</option><option>Contabilidad</option>
+            <option>Recursos Humanos</option><option>Dirección</option><option>Telecomunicaciones</option>
+            <option>Almacén</option><option>Ventas</option><option>Soporte Técnico</option>
+          </select>
+          <span class="emsg">Campo requerido</span>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Descripción del equipo <span class="req">*</span></label>
+        <textarea id="f-desc" class="fc" placeholder="Características, color, número de serie, condición…"></textarea>
+        <span class="emsg">Campo requerido</span>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-s" onclick="closeModal('mo-activo')">Cancelar</button>
+      <button class="btn btn-p" onclick="saveActivo()"><i class="fas fa-save"></i> <span id="m-save-lbl">Guardar Activo</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: DETALLE ── -->
+<div class="mo" id="mo-det">
+  <div class="modal">
+    <div class="m-hd">
+      <h2><div class="m-hd-ico"><i class="fas fa-info-circle"></i></div> Detalle del Activo</h2>
+      <button class="btn-x" onclick="closeModal('mo-det')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="m-body"><div class="detail-grid" id="det-content"></div></div>
+    <div class="m-foot">
+      <button class="btn btn-s" onclick="closeModal('mo-det')">Cerrar</button>
+      <button class="btn btn-e" id="det-edit-btn"><i class="fas fa-edit"></i> Editar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: CONFIRMAR ELIMINACIÓN ── -->
+<div class="mo" id="mo-confirm">
+  <div class="modal sm">
+    <div class="conf-body">
+      <div class="conf-ico"><i class="fas fa-trash-alt"></i></div>
+      <h3>¿Eliminar activo?</h3>
+      <p>Esta acción es irreversible. El registro será eliminado permanentemente.</p>
+      <div class="actions">
+        <button class="btn btn-s" onclick="closeModal('mo-confirm')">Cancelar</button>
+        <button class="btn btn-d" id="conf-del-btn"><i class="fas fa-trash-alt"></i> Sí, eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOASTS ── -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script src="js/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Remove-Item *)",
+      "PowerShell(Start-Process \"C:\\\\Users\\\\ederc\\\\Documents\\\\modulo_activos\\\\index.html\")"
+    ]
+  }
+}
